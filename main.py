@@ -299,3 +299,182 @@ while cap.isOpened():
 cap.release()
 cv2.destroyAllWindows()
 
+-----------------------------------------------------------
+
+
+Ich mache dieses Tutorial: https://www.youtube.com/watch?v=6J2PvzhO_Mk&list=PL8b3FgAiLSnsH8BzKnOTCYT8XxQUJ2RVF&index=3&ab_channel=LearnOpenCV
+Training YOLOv8 Models for Trash Detection: AI for Ocean Clean-Up
+
+import requests
+import zipfile
+import os
+import glob
+import cv2
+import matplotlib.pyplot as plt
+import random
+import numpy as np
+import yaml
+from ultralytics import YOLO
+import multiprocessing
+
+def download_file(url, save_name):
+    url = url
+    if not os.path.exists(save_name):
+        file = requests.get(url)
+        open(save_name, 'wb').write(file.content)
+
+def unzip(zip_file=None):
+    try:
+        with zipfile.ZipFile(zip_file) as z:
+            z.extractall("./")
+            print("Extracted all")
+    except:
+        print("Invalid file")
+        
+        
+        
+def create_yolo_command(task, mode, model, imgsz, data, epochs, batch, name, exist_ok, amp):
+    command = f"""yolo \\
+    task={task} \\
+    mode={mode} \\
+    model={model} \\
+    imgsz={imgsz} \\
+    data={data} \\
+    epochs={epochs} \\
+    batch={batch} \\
+    name={name} \\
+    exist_ok={exist_ok} \\
+    amp={amp}
+    """
+    return command
+
+
+
+def visualize(result_dir):
+    """
+    Function accepts a list of images and plots
+    them in either a 1x1 grid or 2x2 grid.
+    """
+    image_names = glob.glob(os.path.join(result_dir, '*.jpg'))
+    if len(image_names) < 4:
+        plt.figure(figsize=(10, 7))
+        for i, image_name in enumerate(image_names):
+            image = plt.imread(image_name)
+            plt.subplot(1, 1, i+1)
+            plt.imshow(image)
+            plt.axis('off')
+            break
+    if len(image_names) >= 4:
+        plt.figure(figsize=(15, 12))
+        for i, image_name in enumerate(image_names):
+            image = plt.imread(image_name)
+            plt.subplot(2, 2, i+1)
+            plt.imshow(image)
+            plt.axis('off')
+            if i == 3:
+                break
+    plt.tight_layout()
+    plt.show()
+
+def main():
+    # Specify a local directory to save the downloaded files
+    local_directory = './downloaded_files'
+    os.makedirs(local_directory, exist_ok=True)
+
+    # Update the save location
+    save_location = os.path.join(local_directory, 'trash_inst_material.zip')
+
+    download_file('https://www.dropbox.com/s/ievh0sesad015z0/trash_inst_material.zip?dl=1', save_location)
+    unzip(zip_file=save_location)
+
+   # Download the inference data
+    inference_data_location = os.path.join(local_directory, 'trash_segment_inference_data.zip')
+    download_file(
+        'https://www.dropbox.com/s/smdsotz25al3bi2/trash_segment_inference_data.zip?dl=1',
+        inference_data_location
+    )
+    unzip(zip_file=inference_data_location)
+
+    cwd = os.getcwd()
+    print(cwd)
+
+    attr = {
+        'path': cwd + '/trash_inst_material',
+        'train': 'train/images',
+        'val': 'val/images',
+        'names': {
+            0: 'rov', 1: 'plant', 2: 'animal_fish', 3: 'animal_starfish',
+            4: 'animal_shells', 5: 'animal_crab', 6: 'animal_eel', 7: 'animal_etc',
+            8: 'trash_etc', 9: 'trash_fabric', 10: 'trash_fishing_gear', 11: 'trash_metal',
+            12: 'trash_paper', 13: 'trash_plastic', 14: 'trash_rubber', 15: 'trash_wood'
+        }
+    }
+
+    with open('trashcan_inst_material.yaml', 'w') as f:
+        yaml.dump(attr, f)
+
+    EPOCHS = 5
+    BATCH = 4  # Reduced batch size
+    IM_SIZE = 416  # Reduced image size
+    
+    
+       # Create YOLO command string
+    yolo_command = create_yolo_command(
+        task='segment',
+        mode='train',
+        model='yolov8n-seg.pt',
+        imgsz=IM_SIZE,
+        data='trashcan_inst_material.yaml',
+        epochs=EPOCHS,
+        batch=BATCH,
+        name='yolov8n-seg',
+        exist_ok=True,
+        amp=False
+    )
+
+    print("YOLO Command:")
+    print(yolo_command)
+
+    # Initialize the YOLO model
+    model = YOLO('yolov8n-seg.pt')  # Using the nano model, which is smaller
+
+    # Start the training
+    results = model.train(
+        task='segment',
+        mode='train',
+        data='trashcan_inst_material.yaml',
+        imgsz=IM_SIZE,
+        epochs=EPOCHS,
+        batch=BATCH,
+        name='yolov8n-seg',
+        exist_ok=True,
+        amp=False,
+        device='0'  # Explicitly specify GPU device
+    )
+
+    print(results)
+
+
+    # Visualize results
+    result_dir = os.path.join('runs', 'segment', 'yolov8n-seg')
+    visualize(result_dir)
+
+    # Load the trained model for inference
+    # model = YOLO('runs/segment/yolov8m_predict/weights/best.pt')
+    model = YOLO('/content/drive/MyDrive/v8-seg-c100-models/yolov8m-seg/weights/best.pt')
+
+    # Run inference on videos
+    model.predict(
+        source='trash_segment_inference_data/manythings.mp4',
+        save=True,
+        exist_ok=True,
+        name='yolov8m_predict_videos1'
+    )
+
+    # Visualize the inference results
+    visualize('runs/segment/yolov8m_predict_videos1')
+
+
+if __name__ == '__main__':
+    multiprocessing.freeze_support()  # For Windows support
+    main()
