@@ -1,162 +1,167 @@
-# import torch
-# import torchvision
-# import torchvision.transforms as transforms
-# from torchvision.models import ResNet18_Weights
-# from PIL import Image
-# import requests
-# from io import BytesIO
+import torch
+import torchvision
+import torchvision.transforms as transforms
+from torchvision.models import ResNet18_Weights
+from PIL import Image
+import requests
+from io import BytesIO
 
-## IDENTIFY ANY IMAGE BY URL ADDRESS
+# IDENTIFY ANY IMAGE BY URL ADDRESS
 
-# # Check if CUDA is available
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# print(f"Using device: {device}")
+# Check if CUDA is available
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
-# # Load pre-trained ResNet18 model
-# weights = ResNet18_Weights.DEFAULT
-# model = torchvision.models.resnet18(weights=weights)
-# model = model.to(device)
-# model.eval()
+# Load pre-trained ResNet18 model
+weights = ResNet18_Weights.DEFAULT
+model = torchvision.models.resnet18(weights=weights)
+model = model.to(device)
+model.eval()
 
-# # Define image transformations
-# transform = weights.transforms()
+# Define image transformations
+transform = weights.transforms()
 
-# # Load class labels
-# categories = weights.meta["categories"]
-
-
-# # Function to predict image class
-# def predict_image(image_url):
-#     # Download the image
-#     response = requests.get(image_url)
-#     img = Image.open(BytesIO(response.content))
-
-#     # Transform the image
-#     img_t = transform(img)
-#     batch_t = torch.unsqueeze(img_t, 0).to(device)
-
-#     # Make prediction
-#     with torch.no_grad():
-#         out = model(batch_t)
-
-#     # Get top 5 predictions
-#     probabilities = torch.nn.functional.softmax(out[0], dim=0)
-#     top5_prob, top5_catid = torch.topk(probabilities, 5)
-
-#     # Print results
-#     print("\nTop 5 predictions:")
-#     for i in range(top5_prob.size(0)):
-#         print(f"{categories[top5_catid[i]]:>20}: {top5_prob[i].item()*100:.2f}%")
+# Load class labels
+categories = weights.meta["categories"]
 
 
-# # Example usage with a web image
-# image_url = "https://plus.unsplash.com/premium_photo-1689266188052-704d33673e69?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-# predict_image(image_url)
+# Function to predict image class
+def predict_image(image_url):
+    # Download the image
+    response = requests.get(image_url)
+    img = Image.open(BytesIO(response.content))
 
-# # Load MNIST dataset
-# mnist_transform = transforms.Compose([
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.1307,), (0.3081,))
-# ])
+    # Transform the image
+    img_t = transform(img)
+    batch_t = torch.unsqueeze(img_t, 0).to(device)
 
-# mnist_dataset = torchvision.datasets.MNIST(
-#     root="./data", train=True, download=True, transform=mnist_transform
-# )
+    # Make prediction
+    with torch.no_grad():
+        out = model(batch_t)
+
+    # Get top 5 predictions
+    probabilities = torch.nn.functional.softmax(out[0], dim=0)
+    top5_prob, top5_catid = torch.topk(probabilities, 5)
+
+    # Print results
+    print("\nTop 5 predictions:")
+    for i in range(top5_prob.size(0)):
+        print(f"{categories[top5_catid[i]]:>20}: {top5_prob[i].item()*100:.2f}%")
 
 
-# # Function to display MNIST image subset as ASCII art
-# def display_mnist_subset(image_tensor, start_row, end_row, start_col, end_col):
-#     subset = image_tensor[0, start_row:end_row, start_col:end_col].numpy()
-#     for i in range(subset.shape[0]):
-#         for j in range(subset.shape[1]):
-#             pixel_value = subset[i, j]
-#             if pixel_value < -0.5:
-#                 print("  ", end="")
-#             elif pixel_value < 0:
-#                 print(" .", end="")
-#             elif pixel_value < 0.5:
-#                 print(" o", end="")
-#             else:
-#                 print(" @", end="")
-#         print()
+# Example usage with a web image
+image_url = "https://plus.unsplash.com/premium_photo-1689266188052-704d33673e69?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+predict_image(image_url)
 
-# # Display and analyze the first image from the MNIST dataset
-# image, label = mnist_dataset[0]
-# print(f"\nMNIST Label: {label}")
-# print("MNIST Image:")
+# Load MNIST dataset
+mnist_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.1307,), (0.3081,))
+])
 
-# print("\nImage tensor shape:", image.shape)
-# print("Subset of pixel values (10:15, 10:15):")
-# print(image[:, 10:15, 10:15])
-# print("Max pixel value:", torch.max(image).item())
-# print("Min pixel value:", torch.min(image).item())
+mnist_dataset = torchvision.datasets.MNIST(
+    root="./data", train=True, download=True, transform=mnist_transform
+)
 
-# print("\nVisualization of subset (10:15, 10:15):")
-# display_mnist_subset(image, 10, 15, 10, 15)
 
+# Function to display MNIST image subset as ASCII art
+def display_mnist_subset(image_tensor, start_row, end_row, start_col, end_col):
+    subset = image_tensor[0, start_row:end_row, start_col:end_col].numpy()
+    for i in range(subset.shape[0]):
+        for j in range(subset.shape[1]):
+            pixel_value = subset[i, j]
+            if pixel_value < -0.5:
+                print("  ", end="")
+            elif pixel_value < 0:
+                print(" .", end="")
+            elif pixel_value < 0.5:
+                print(" o", end="")
+            else:
+                print(" @", end="")
+        print()
+
+# Display and analyze the first image from the MNIST dataset
+image, label = mnist_dataset[0]
+print(f"\nMNIST Label: {label}")
+print("MNIST Image:")
+
+print("\nImage tensor shape:", image.shape)
+print("Subset of pixel values (10:15, 10:15):")
+print(image[:, 10:15, 10:15])
+print("Max pixel value:", torch.max(image).item())
+print("Min pixel value:", torch.min(image).item())
+
+print("\nVisualization of subset (10:15, 10:15):")
+display_mnist_subset(image, 10, 15, 10, 15)
+
+
+-----------------------------------------------------------
 
 ## IDENTIFY WASTE MATERIAL BY URL IMAGE ADDRES
 
-# import torch
-# import torchvision
-# import torchvision.transforms as transforms
-# from torchvision.models import resnet18, ResNet18_Weights
-# from PIL import Image
-# import requests
-# from io import BytesIO
+import torch
+import torchvision
+import torchvision.transforms as transforms
+from torchvision.models import resnet18, ResNet18_Weights
+from PIL import Image
+import requests
+from io import BytesIO
 
-# # Check if CUDA is available
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# print(f"Using device: {device}")
+# Check if CUDA is available
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
-# # Define the class labels
-# categories = ["plastic", "carton", "metal", "food"]
+# Define the class labels
+categories = ["plastic", "carton", "metal", "food"]
 
-# # Load pre-trained ResNet18 model
-# weights = ResNet18_Weights.DEFAULT
-# model = resnet18(weights=weights)
-# num_features = model.fc.in_features
-# model.fc = torch.nn.Linear(num_features, len(categories))
-# model = model.to(device)
-# model.eval()
+# Load pre-trained ResNet18 model
+weights = ResNet18_Weights.DEFAULT
+model = resnet18(weights=weights)
+num_features = model.fc.in_features
+model.fc = torch.nn.Linear(num_features, len(categories))
+model = model.to(device)
+model.eval()
 
-# # Define image transformations
-# transform = transforms.Compose([
-#     transforms.Resize(256),
-#     transforms.CenterCrop(224),
-#     transforms.ToTensor(),
-#     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-# ])
+# Define image transformations
+transform = transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
 
-# # Function to predict image class
-# def predict_image(image_url):
-#     # Download the image
-#     response = requests.get(image_url)
-#     img = Image.open(BytesIO(response.content)).convert("RGB")
+# Function to predict image class
+def predict_image(image_url):
+    # Download the image
+    response = requests.get(image_url)
+    img = Image.open(BytesIO(response.content)).convert("RGB")
 
-#     # Transform the image
-#     img_t = transform(img)
-#     batch_t = torch.unsqueeze(img_t, 0).to(device)
+    # Transform the image
+    img_t = transform(img)
+    batch_t = torch.unsqueeze(img_t, 0).to(device)
 
-#     # Make prediction
-#     with torch.no_grad():
-#         out = model(batch_t)
+    # Make prediction
+    with torch.no_grad():
+        out = model(batch_t)
 
-#     # Get top prediction
-#     probabilities = torch.nn.functional.softmax(out[0], dim=0)
-#     top_prob, top_catid = torch.topk(probabilities, 1)
+    # Get top prediction
+    probabilities = torch.nn.functional.softmax(out[0], dim=0)
+    top_prob, top_catid = torch.topk(probabilities, 1)
 
-#     # Print result
-#     print(f"\nPredicted class: {categories[top_catid[0]]}")
-#     print(f"Confidence: {top_prob[0].item()*100:.2f}%")
+    # Print result
+    print(f"\nPredicted class: {categories[top_catid[0]]}")
+    print(f"Confidence: {top_prob[0].item()*100:.2f}%")
 
-# # Example usage with a web image
-# image_url = "https://images.unsplash.com/photo-1582765114728-428aa4d1ff36?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-# predict_image(image_url)
+# Example usage with a web image
+image_url = "https://images.unsplash.com/photo-1582765114728-428aa4d1ff36?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+predict_image(image_url)
 
 
-## Identifying objetcs within a vide
-## topics: image segmentation, object detection and bouncing box
+# Identifying objetcs within a vide
+# topics: image segmentation, object detection and bouncing box
+
+
+-----------------------------------------------------------
 
 import cv2
 import torch
@@ -265,3 +270,32 @@ while True:
 # Release the video capture and close the windows
 video_capture.release()
 cv2.destroyAllWindows()
+
+-----------------------------------------------------------
+
+# INSTANCE SEGMENTATION AND OBJECT DETECTION ON WEBCAM
+
+import pixellib
+from pixellib.instance import instance_segmentation
+import cv2
+
+
+segmentation_model = instance_segmentation()
+segmentation_model.load_model('mask_rcnn_coco.h5',)
+
+cap = cv2.VideoCapture(0)
+while cap.isOpened():
+    ret, frame = cap.read()
+    
+    # Apply instance segmentation
+    res = segmentation_model.segmentFrame(frame, show_bboxes=True)
+    image = res[1]
+    
+    cv2.imshow('Instance Segmentation', image)
+    
+    if cv2.waitKey(10) & 0xFF == ord('q'):
+        break
+        
+cap.release()
+cv2.destroyAllWindows()
+
