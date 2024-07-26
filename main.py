@@ -478,3 +478,97 @@ def main():
 if __name__ == '__main__':
     multiprocessing.freeze_support()  # For Windows support
     main()
+
+
+-----------------------------------------------------------
+
+
+Ich mache dieses Tutorial: https://www.youtube.com/watch?v=Dmv4EVBuCTQ&list=PL8b3FgAiLSnsH8BzKnOTCYT8XxQUJ2RVF&index=3&ab_channel=CodeWithAarohi
+Train YOLOv10 on Custom Dataset
+
+
+import torch
+from torch.utils.data import DataLoader
+from torchvision import transforms
+
+# from models import YOLOv5
+
+from models.models import YOLOv5
+from utils.dataset import WasteDataset
+from utils.transforms import Resize, ToTensor, Normalize
+
+import argparse
+import yaml
+
+def load_data(data_config):
+    train_dataset = WasteDataset(data_config['train'], transform=transforms.Compose([
+        Resize(640),
+        ToTensor(),
+        Normalize()
+    ]))
+    val_dataset = WasteDataset(data_config['val'], transform=transforms.Compose([
+        Resize(640),
+        ToTensor(),
+        Normalize()
+    ]))
+    
+    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=16)
+    
+    return train_loader, val_loader
+
+def train(model, train_loader, val_loader, device, num_epochs):
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = torch.nn.CrossEntropyLoss()
+    
+    for epoch in range(num_epochs):
+        model.train()
+        for images, labels in train_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+        
+        model.eval()
+        with torch.no_grad():
+            total_correct = 0
+            total_samples = 0
+            for images, labels in val_loader:
+                images = images.to(device)
+                labels = labels.to(device)
+                
+                outputs = model(images)
+                _, predicted = torch.max(outputs, 1)
+                total_samples += labels.size(0)
+                total_correct += (predicted == labels).sum().item()
+            
+            accuracy = total_correct / total_samples
+            print(f"Epoch [{epoch+1}/{num_epochs}], Validation Accuracy: {accuracy:.4f}")
+    
+    torch.save(model.state_dict(), 'models/model.pth')
+
+def main(args):
+    with open(args.config, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    train_loader, val_loader = load_data(config['data'])
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = YOLOv5(num_classes=len(config['data']['names'])).to(device)
+    
+    train(model, train_loader, val_loader, device, args.epochs)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, default='data/waste.yaml')
+    parser.add_argument('--epochs', type=int, default=10)
+    args = parser.parse_args()
+    
+    main(args)
+
+
+-----------------------------------------------------------
