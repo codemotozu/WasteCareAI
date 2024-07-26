@@ -572,3 +572,85 @@ if __name__ == '__main__':
 
 
 -----------------------------------------------------------
+Ich mache dieses Tutorial: https://www.youtube.com/watch?v=QtsI0TnwDZs&t=469s&ab_channel=Ultralytics
+How to Extract the Outputs from Ultralytics YOLOv8 Model for Custom Projects | Episode 5
+
+
+import torch
+import numpy as np
+import cv2
+from time import time
+from ultralytics import YOLO
+
+class ObjectDetection:
+    def __init__(self, capture_index):
+        self.capture_index = capture_index
+        self.device = "cpu"  # Use CPU instead of CUDA
+        print("Using Device: ", self.device)
+        self.model = self.load_model()
+
+    def load_model(self):
+        model = YOLO("yolov8m.pt")  # load a pretrained YOLOv8 model
+        model.fuse()
+        return model
+
+    def predict(self, frame):
+        try:
+            results = self.model(frame)
+        except NotImplementedError:
+            # Fallback to CPU if CUDA backend fails
+            self.model.to("cpu")
+            results = self.model(frame)
+        return results
+
+    def plot_bboxes(self, results, frame):
+        xxyys = []
+        confidences = []
+        class_ids = []
+
+        # Extract detections for person class
+        for result in results:
+            boxes = result.boxes.cpu().numpy()
+            
+            print(boxes)
+            
+            xyxy = boxes.xyxy
+            
+            xxyys.append(boxes.xyxy)
+            confidences.append(boxes.conf)
+            class_ids.append(boxes.cls)
+
+        for xxyy in xxyys:
+            for box in xxyy:
+                cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
+
+        return results[0].plot(), xxyys, confidences, class_ids
+
+    def __call__(self):
+        cap = cv2.VideoCapture(self.capture_index)
+        assert cap.isOpened()
+        
+        while True:
+            start_time = time()
+            
+            ret, frame = cap.read()
+            assert ret
+            
+            results = self.predict(frame)
+            frame, xxyys, confidences, class_ids = self.plot_bboxes(results, frame)
+            
+            end_time = time()
+            fps = 1 / (end_time - start_time)
+            
+            cv2.putText(frame, f'FPS: {fps:.2f}', (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            
+            cv2.imshow('YOLOv8 Detection', frame)
+            
+            if cv2.waitKey(5) & 0xFF == 27:
+                break
+        
+        cap.release()
+        cv2.destroyAllWindows()
+
+detector = ObjectDetection(capture_index=0)
+detector()
