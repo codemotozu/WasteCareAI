@@ -1,4 +1,4 @@
-# VIDEO TUTORIAL: YOLOv9 Instance Segmentation on Live Webcam and YOLOv8 Comparison
+ VIDEO TUTORIAL: YOLOv9 Instance Segmentation on Live Webcam and YOLOv8 Comparison
 
 # from ultralytics import YOLO
 
@@ -10,8 +10,8 @@
 
 # results = model.predict(0, show=True, save=True)
 
-
-# SOLVED PROBLEM "GPU OUT OF MEMORY"
+----------------------------------------------------------
+ SOLVED PROBLEM "GPU OUT OF MEMORY"
 
 # from ultralytics import YOLO
 # import torch
@@ -170,7 +170,8 @@
 # if torch.cuda.is_available():
 #     torch.cuda.empty_cache()
 
-##### cruise yellow in the center of the object
+Yellow cruise in the center of the object
+
 # from ultralytics import YOLO
 # import torch
 # import cv2
