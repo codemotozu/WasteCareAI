@@ -84,8 +84,10 @@
 # if torch.cuda.is_available():
 #     torch.cuda.empty_cache()
 
+----------------------------------------------------------
 
 
+Red point in the center of the object
 
 
 # from ultralytics import YOLO
@@ -169,6 +171,8 @@
 # # Clear CUDA cache
 # if torch.cuda.is_available():
 #     torch.cuda.empty_cache()
+
+----------------------------------------------------------
 
 Yellow cruise in the center of the object
 
@@ -262,11 +266,13 @@ Yellow cruise in the center of the object
 # if torch.cuda.is_available():
 #     torch.cuda.empty_cache()
 
+----------------------------------------------------------
 
-#### yellow, white and black cruise in the center of the object
-### to do : add FPS and make sure the program is running with cuda
-## to solve this error "error: (-2:Unspecified error) The function is not implemented. Rebuild the library with Windows, GTK+ 2.x or Cocoa support. If you are on Ubuntu or Debian, install libgtk2.0-dev and pkg-config, then re-run cmake or configure script in function 'cvShowImage'"
-### do this: pip uninstall opencv-python and then pip install opencv-python
+
+yellow, white and black cruise in the center of the object
+to do : add FPS and make sure the program is running with cuda
+to solve this error "error: (-2:Unspecified error) The function is not implemented. Rebuild the library with Windows, GTK+ 2.x or Cocoa support. If you are on Ubuntu or Debian, install libgtk2.0-dev and pkg-config, then re-run cmake or configure script in function 'cvShowImage'"
+do this: pip uninstall opencv-python and then pip install opencv-python
 
 
 from ultralytics import YOLO
