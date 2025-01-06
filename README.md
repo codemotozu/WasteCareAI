@@ -1,4 +1,4 @@
-# WasteSenseAI
+# WasteCareAI
 
 I’d like to help with the environmental crisis around the world by developing software that can help to sort waste with a robotic arm, I’d like to help with the software, my software implements computer vision to recognize the object, YOLOv8 (You Only Look Once) with object detection, and instance segmentation technology, Rotoflow which is the tool to train the model and contains its dataset around of 1600 images to train the model, I added a video to show you how the software works, if possible can you implement my software in your hardware to perform with your robots? Or what can I do to merge the computer vision software with your robotics technology successfully? There’s no cost at all, for me, it would be an honor to help with the environmental crisis.
 
